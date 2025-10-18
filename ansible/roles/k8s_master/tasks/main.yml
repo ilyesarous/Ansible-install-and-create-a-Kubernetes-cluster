@@ -1,0 +1,33 @@
+- name: Check if Kubernetes is already initialized
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubeadm_already_initialized
+
+- name: Initialize Kubernetes cluster
+  command: kubeadm init --pod-network-cidr=10.244.0.0/16
+  #when: not kubeadm_already_initialized.stat.exists
+  register: kubeadm_init
+
+- name: Create .kube directory for user
+  file:
+    path: /home/{{ ansible_user }}/.kube
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Copy admin.conf to user's kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/{{ ansible_user }}/.kube/config
+    remote_src: yes
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0600'
+
+- name: Save join command to a file
+  copy:
+    content: "{{ kubeadm_init.stdout_lines[-2] | default('') }}"
+    dest: /root/join-command.sh
+    mode: '0755'
+  #when: not kubeadm_already_initialized.stat.exists

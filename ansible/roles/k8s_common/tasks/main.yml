@@ -1,0 +1,91 @@
+---
+- name: Install required packages
+  apt:
+    name:
+      - curl
+      - gnupg
+      - apt-transport-https
+      - ca-certificates
+      - software-properties-common
+    state: present
+
+- name: Disable swap
+  command: swapoff -a
+  ignore_errors: yes
+
+- name: Ensure swap is disabled on reboot
+  lineinfile:
+    path: /etc/fstab
+    regexp: '^\s*swap\s'
+    state: absent
+
+# Supprimer d'éventuelles anciennes clés Kubernetes
+- name: Remove old Kubernetes GPG key
+  file:
+    path: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+    state: absent
+
+# Ajouter la clé GPG Kubernetes
+- name: Add Kubernetes GPG key
+  shell: |
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
+
+# Ajouter le bon dépôt Kubernetes pour Ubuntu 22.04 (Jammy)
+- name: Check if Kubernetes repository is already added
+  command: grep -q 'https://pkgs.k8s.io/core:/stable:/v1.30/deb/' /etc/apt/sources.list.d/kubernetes.list
+  register: repo_check
+  ignore_errors: yes
+
+- name: Add Kubernetes apt repository if not present
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /"
+    state: present
+    filename: "kubernetes"
+  when: repo_check.rc != 0
+
+- name: Update apt and install Kubernetes components
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+
+- name: Hold Kubernetes packages at current version
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+# Installer containerd
+- name: Install containerd
+  apt:
+    name: containerd
+    state: present
+    update_cache: yes
+
+# Configurer containerd
+- name: Ensure containerd directory exists
+  file:
+    path: /etc/containerd
+    state: directory
+    mode: '0755'
+
+- name: Generate default containerd configuration
+  shell: |
+    containerd config default | sudo tee /etc/containerd/config.toml
+
+- name: Enable SystemdCgroup in containerd configuration
+  replace:
+    path: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup = false'
+    replace: 'SystemdCgroup = true'
+
+- name: Restart containerd service
+  systemd:
+    name: containerd
+    state: restarted
+    enabled: yes

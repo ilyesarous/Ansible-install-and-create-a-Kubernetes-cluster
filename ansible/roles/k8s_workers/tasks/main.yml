@@ -1,0 +1,9 @@
+---
+- name: Retrieve kubeadm join command from the master
+  delegate_to: "{{ groups['master'][0] }}"
+  shell: kubeadm token create --print-join-command
+  register: kubeadm_join_command
+
+- name: Join the Kubernetes cluster on workers
+  shell: "{{ kubeadm_join_command.stdout }}"
+  tags: workers

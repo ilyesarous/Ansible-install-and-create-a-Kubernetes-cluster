@@ -24,17 +24,17 @@ The playbook is modular and divided into roles:
 
 ## 📁 Repository Structure
 
-├── inventory.ini
-├── playbook.yml
-└── roles/
-├── k8s_common/
-│ └── tasks/main.yml
-├── k8s_networking/
-│ └── tasks/main.yml
-├── k8s_master/
-│ └── tasks/main.yml
-└── k8s_workers/
-└── tasks/main.yml
+├── inventory.ini<br>
+├── playbook.yml<br>
+└── roles/<br>
+├── k8s_common/<br>
+│ └── tasks/main.yml<br>
+├── k8s_networking/<br>
+│ └── tasks/main.yml<br>
+├── k8s_master/<br>
+│ └── tasks/main.yml<br>
+└── k8s_workers/<br>
+└── tasks/main.yml<br>
 
 yaml
 Copy code

@@ -44,7 +44,10 @@ Before running the playbook, ensure that:<br>
 
 1. You have **Ansible** installed on your control machine.<br>
    ```bash
-   sudo apt update && sudo apt install ansible -y
+   $ sudo apt update
+   $ sudo apt install software-properties-common
+   $ sudo add-apt-repository --yes --update ppa:ansible/ansible
+   $ sudo apt install ansible
 Your managed nodes (VMs or servers) are reachable via SSH (Vagrant boxes are used in this example).<br>
 
 Password-based SSH access is enabled (as per inventory.ini).<br>
